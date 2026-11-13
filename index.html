@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Brotrechner">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#7a4a1e">
+<title>Brotrechner</title>
+<style>
+  :root{
+    --bg:#f7f1e8; --card:#fffdf9; --ink:#2b1d10; --muted:#7d6a57;
+    --crust:#7a4a1e; --crust-2:#a8672c; --line:#e7dccb; --danger:#b23a2a; --ok:#3f7a3a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+  header{background:var(--crust);color:#fff;padding:calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 14px calc(16px + env(safe-area-inset-left));position:sticky;top:0;z-index:5;
+    display:flex;align-items:center;gap:10px}
+  header h1{font-size:19px;margin:0;flex:1;letter-spacing:.2px}
+  header button{background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:14px}
+  main{max-width:640px;margin:0 auto;padding:14px calc(14px + env(safe-area-inset-right)) calc(90px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px;
+    box-shadow:0 1px 2px rgba(60,30,0,.05)}
+  label.small{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+  select,input,textarea{font:inherit;color:inherit;width:100%;padding:11px 12px;border:1px solid var(--line);
+    border-radius:12px;background:#fff}
+  select:focus,input:focus,textarea:focus{outline:2px solid var(--crust-2);outline-offset:0;border-color:transparent}
+  .row{display:flex;gap:8px;align-items:center}
+  .count-row{display:flex;align-items:center;gap:10px}
+  .count-row button{width:56px;height:56px;border-radius:14px;border:0;background:var(--crust);color:#fff;font-size:28px;font-weight:700}
+  .count-row input{text-align:center;font-size:30px;font-weight:700;height:56px;padding:0}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .chips button{flex:1 0 15%;min-width:44px;padding:9px 0;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:16px;font-weight:600;color:var(--ink)}
+  .chips button.on{background:var(--crust-2);color:#fff;border-color:var(--crust-2)}
+  table{width:100%;border-collapse:collapse}
+  td{padding:10px 4px;border-bottom:1px solid var(--line);vertical-align:baseline}
+  tr:last-child td{border-bottom:0}
+  td.amt{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:18px}
+  td.unit{color:var(--muted);width:44px;padding-left:6px}
+  .total{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:2px solid var(--line);color:var(--muted);font-size:14px}
+  .total b{color:var(--ink)}
+  .hint{color:var(--muted);font-size:13px;margin:6px 0 0}
+  .btn{border:0;border-radius:12px;padding:12px 14px;font:inherit;font-weight:600;background:var(--crust);color:#fff}
+  .btn.ghost{background:#fff;color:var(--crust);border:1px solid var(--line)}
+  .btn.danger{background:#fff;color:var(--danger);border:1px solid #efcfc9}
+  .btn.block{width:100%}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .btns .btn{flex:1}
+  .ing{display:grid;grid-template-columns:1fr 86px 74px 40px;gap:6px;margin-bottom:6px}
+  .ing input,.ing select{padding:10px 8px}
+  .ing .x{border:0;background:none;color:var(--danger);font-size:22px}
+  .ing-head{display:grid;grid-template-columns:1fr 86px 74px 40px;gap:6px;font-size:12px;color:var(--muted);margin:10px 0 4px;padding-left:2px}
+  .hidden{display:none!important}
+  .list-item{display:flex;align-items:center;justify-content:space-between;padding:12px 2px;border-bottom:1px solid var(--line)}
+  .list-item:last-child{border-bottom:0}
+  .list-item small{color:var(--muted)}
+  .modal-bg{position:fixed;inset:0;background:rgba(30,15,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
+  .modal{background:var(--card);border-radius:16px;padding:18px;max-width:420px;width:100%}
+  .modal p{margin:0 0 14px}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none}
+  .toast.show{opacity:1}
+  h2{font-size:17px;margin:0 0 10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🍞 <span data-i18n="app">Brotrechner</span></h1>
+  <button id="langBtn" aria-label="Sprache">EN</button>
+  <button id="navBtn">Rezepte</button>
+</header>
+
+<main>
+  <!-- RECHNER -->
+  <section id="viewCalc">
+    <div class="card">
+      <label class="small" for="breadSel" data-i18n="bread">Brot</label>
+      <select id="breadSel"></select>
+      <p class="hint" id="yieldHint"></p>
+    </div>
+
+    <div class="card">
+      <label class="small" for="count" data-i18n="howMany">Wie viele?</label>
+      <div class="count-row">
+        <button id="minus" aria-label="weniger">−</button>
+        <input id="count" type="number" inputmode="decimal" min="0" step="1" value="1">
+        <button id="plus" aria-label="mehr">+</button>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div class="card">
+      <h2 id="resTitle"></h2>
+      <table><tbody id="resBody"></tbody></table>
+      <div class="total"><span data-i18n="total">Gesamt-Teig (g/kg/ml/l)</span><b id="totalW"></b></div>
+      <div class="total" id="perPieceRow"><span data-i18n="perPiece">Teig pro Stück</span><b id="perPiece"></b></div>
+    </div>
+  </section>
+
+  <!-- REZEPTLISTE -->
+  <section id="viewList" class="hidden">
+    <div class="card">
+      <h2 data-i18n="recipes">Rezepte</h2>
+      <div id="recipeList"></div>
+      <div class="btns"><button class="btn block" id="addBread" data-i18n="addBread">+ Neues Brot</button></div>
+    </div>
+    <div class="card">
+      <h2 data-i18n="backup">Sicherung</h2>
+      <p class="hint" style="margin:0 0 10px" data-i18n="backupHint"></p>
+      <div class="btns" style="margin-top:0">
+        <button class="btn ghost" id="exportBtn" data-i18n="download"></button>
+        <button class="btn ghost" id="importBtn" data-i18n="load"></button>
+      </div>
+      <input type="file" id="fileIn" accept=".json,application/json" class="hidden">
+      <div class="btns"><button class="btn danger" id="resetBtn" data-i18n="reset">Grundrezepte wiederherstellen</button></div>
+    </div>
+  </section>
+
+  <!-- EDITOR -->
+  <section id="viewEdit" class="hidden">
+    <div class="card">
+      <h2 id="editTitle">Brot bearbeiten</h2>
+      <label class="small" for="eName" data-i18n="name">Name</label>
+      <input id="eName" data-i18n-ph="namePh" placeholder="z. B. Dinkelbrot">
+      <label class="small" for="eYield" style="margin-top:12px" data-i18n="yieldLbl">Rezept ergibt … Stück</label>
+      <input id="eYield" type="number" inputmode="decimal" min="0.01" step="1" value="1">
+      <p class="hint" data-i18n="yieldHelp">Die Mengen unten gelten für diese Stückzahl. Beispiel: Rezept für 10 Brötchen → 10 eintragen.</p>
+
+      <div class="ing-head"><span data-i18n="ing">Zutat</span><span data-i18n="amount">Menge</span><span data-i18n="unit">Einheit</span><span></span></div>
+      <div id="ingList"></div>
+      <div class="btns"><button class="btn ghost block" id="addIng" data-i18n="addIng">+ Zutat</button></div>
+
+      <div class="btns">
+        <button class="btn ghost" id="cancelEdit" data-i18n="cancel">Abbrechen</button>
+        <button class="btn" id="saveEdit" data-i18n="save">Speichern</button>
+      </div>
+      <div class="btns"><button class="btn danger block" id="delBread" data-i18n="delete">Brot löschen</button></div>
+    </div>
+  </section>
+</main>
+
+<div class="modal-bg hidden" id="modal">
+  <div class="modal">
+    <p id="modalText"></p>
+    <div class="btns" style="margin-top:0">
+      <button class="btn ghost" id="modalNo" data-i18n="cancel">Abbrechen</button>
+      <button class="btn" id="modalYes">OK</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const KEY = 'brotrechner.v1';
+  const UNITS = ['g','kg','ml','l','Stk','EL','TL','Prise'];
+
+  const T = {
+    de:{app:'Brotrechner',bread:'Brot',howMany:'Wie viele?',total:'Gesamt-Teig (g/kg/ml/l)',perPiece:'Teig pro Stück',
+      recipes:'Rezepte',addBread:'+ Neues Brot',backup:'Sicherung',
+      backupHint:'Alle Rezepte als JSON-Datei herunterladen – und später wieder laden (auch auf einem anderen Handy).',
+      download:'⬇ Herunterladen',load:'⬆ Datei laden',
+      reset:'Grundrezepte wiederherstellen',name:'Name',namePh:'z. B. Dinkelbrot',yieldLbl:'Rezept ergibt … Stück',
+      yieldHelp:'Die Mengen unten gelten für diese Stückzahl. Beispiel: Rezept für 10 Brötchen → 10 eintragen.',
+      ing:'Zutat',amount:'Menge',unit:'Einheit',addIng:'+ Zutat',cancel:'Abbrechen',save:'Speichern',delete:'Brot löschen',
+      back:'← Rechner',baseFor:n=>`Grundrezept für ${n} Stück`,ingFor:(n,b)=>`Zutaten für ${n} × ${b}`,
+      noRecipes:'Noch keine Rezepte – lege unter „Rezepte“ eins an.',noIng:'Keine Zutaten eingetragen.',
+      listSub:(i,y)=>`${i} Zutaten · für ${y} Stück`,edit:'Bearbeiten',none:'Keine Rezepte.',
+      editTitle:'Brot bearbeiten',newTitle:'Neues Brot',remove:'Entfernen',
+      needName:'Bitte einen Namen eingeben',needYield:'Stückzahl muss größer als 0 sein',saved:'Gespeichert',
+      confirmDel:n=>`„${n}“ wirklich löschen?`,deleted:'Gelöscht',downloaded:'Datei heruntergeladen',invalid:'Keine gültige Sicherungsdatei',
+      confirmImport:n=>`${n} Rezepte importieren? Die aktuellen Rezepte werden ersetzt.`,imported:'Importiert',
+      confirmReset:'Alle Rezepte auf die Grundrezepte zurücksetzen? Eigene Änderungen gehen verloren.',resetDone:'Zurückgesetzt',
+      units:{Stk:'Stk',EL:'EL',TL:'TL',Prise:'Prise'},
+      defIng:['Mehl','Wasser','Hefe','Salz']},
+    en:{app:'Bread Calculator',bread:'Bread',howMany:'How many?',total:'Total dough (g/kg/ml/l)',perPiece:'Dough per piece',
+      recipes:'Recipes',addBread:'+ New bread',backup:'Backup',
+      backupHint:'Download all recipes as a JSON file – and load it again later (also on another phone).',
+      download:'⬇ Download',load:'⬆ Load file',
+      reset:'Restore base recipes',name:'Name',namePh:'e.g. Spelt bread',yieldLbl:'Recipe makes … pieces',
+      yieldHelp:'The amounts below are for this many pieces. Example: recipe for 10 rolls → enter 10.',
+      ing:'Ingredient',amount:'Amount',unit:'Unit',addIng:'+ Ingredient',cancel:'Cancel',save:'Save',delete:'Delete bread',
+      back:'← Calculator',baseFor:n=>`Base recipe for ${n} piece${n==='1'?'':'s'}`,ingFor:(n,b)=>`Ingredients for ${n} × ${b}`,
+      noRecipes:'No recipes yet – add one under “Recipes”.',noIng:'No ingredients entered.',
+      listSub:(i,y)=>`${i} ingredients · for ${y} piece${y==='1'?'':'s'}`,edit:'Edit',none:'No recipes.',
+      editTitle:'Edit bread',newTitle:'New bread',remove:'Remove',
+      needName:'Please enter a name',needYield:'Pieces must be greater than 0',saved:'Saved',
+      confirmDel:n=>`Really delete “${n}”?`,deleted:'Deleted',downloaded:'File downloaded',invalid:'Not a valid backup file',
+      confirmImport:n=>`Import ${n} recipes? Your current recipes will be replaced.`,imported:'Imported',
+      confirmReset:'Reset all recipes to the base recipes? Your own changes will be lost.',resetDone:'Reset done',
+      units:{Stk:'pcs',EL:'tbsp',TL:'tsp',Prise:'pinch'},
+      defIng:['Flour','Water','Yeast','Salt']}
+  };
+
+  // Beispiel-Grundrezepte – Mengen pro "yield" Stück. Frei änderbar in der App.
+  const RAW = {
+    de:[
+      ['weizen','Weizenbrot',1,[['Weizenmehl 550',560,'g'],['Wasser',360,'g'],['Hefe (frisch)',10,'g'],['Salz',11,'g']]],
+      ['misch','Roggenmischbrot',1,[['Roggenmehl 1150',330,'g'],['Weizenmehl 1050',220,'g'],['Wasser',390,'g'],['Sauerteig (Anstellgut)',55,'g'],['Hefe (frisch)',6,'g'],['Salz',12,'g']]],
+      ['roggen','Roggenbrot',1,[['Roggenmehl 1150',500,'g'],['Wasser',400,'g'],['Sauerteig (Anstellgut)',50,'g'],['Salz',11,'g']]],
+      ['vollkorn','Vollkornbrot',1,[['Weizenvollkornmehl',500,'g'],['Wasser',400,'g'],['Sonnenblumenkerne',60,'g'],['Hefe (frisch)',10,'g'],['Salz',10,'g']]],
+      ['baguette','Baguette',1,[['Weizenmehl 550',300,'g'],['Wasser',210,'g'],['Hefe (frisch)',3,'g'],['Salz',6,'g']]],
+      ['broetchen','Brötchen',10,[['Weizenmehl 550',600,'g'],['Wasser',360,'g'],['Hefe (frisch)',18,'g'],['Salz',12,'g'],['Backmalz',6,'g'],['Butter',12,'g']]]],
+    en:[
+      ['weizen','White bread',1,[['Bread flour (Type 550)',560,'g'],['Water',360,'g'],['Fresh yeast',10,'g'],['Salt',11,'g']]],
+      ['misch','Rye-wheat bread',1,[['Rye flour (Type 1150)',330,'g'],['Wheat flour (Type 1050)',220,'g'],['Water',390,'g'],['Sourdough starter',55,'g'],['Fresh yeast',6,'g'],['Salt',12,'g']]],
+      ['roggen','Rye bread',1,[['Rye flour (Type 1150)',500,'g'],['Water',400,'g'],['Sourdough starter',50,'g'],['Salt',11,'g']]],
+      ['vollkorn','Wholemeal bread',1,[['Wholemeal wheat flour',500,'g'],['Water',400,'g'],['Sunflower seeds',60,'g'],['Fresh yeast',10,'g'],['Salt',10,'g']]],
+      ['baguette','Baguette',1,[['Bread flour (Type 550)',300,'g'],['Water',210,'g'],['Fresh yeast',3,'g'],['Salt',6,'g']]],
+      ['broetchen','Bread rolls',10,[['Bread flour (Type 550)',600,'g'],['Water',360,'g'],['Fresh yeast',18,'g'],['Salt',12,'g'],['Baking malt',6,'g'],['Butter',12,'g']]]]
+  };
+  const defaults = l => RAW[l].map(([id,name,y,ing])=>({id,name,yield:y,ing:ing.map(([n,a,u])=>({n,a,u}))}));
+  const sig = b => JSON.stringify([b.name,b.yield,b.ing]);
+
+  let state = load();
+  let L = () => T[state.lang] || T.de;
+
+  function load(){
+    let lang = (navigator.language||'de').toLowerCase().startsWith('de') ? 'de' : 'en';
+    try{
+      const raw = localStorage.getItem(KEY);
+      if(raw){ const s = JSON.parse(raw); if(s && Array.isArray(s.breads)){ if(!s.lang) s.lang='de'; return s; } }
+    }catch(e){}
+    const d=defaults(lang);
+    return {lang, breads:d, sel:d[0].id, count:1};
+  }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const num = v => { const x = parseFloat(String(v).replace(',','.')); return isFinite(x)?x:0; };
+  const de = (x,d) => x.toLocaleString(state.lang==='en'?'en-GB':'de-DE',{minimumFractionDigits:0,maximumFractionDigits:d});
+  const uLabel = u => L().units[u] || u;
+
+  function fmt(a,u){
+    if(u==='g'){ if(a>=1000) return [de(a/1000,2),'kg']; return [de(a, a<10?1:0),'g']; }
+    if(u==='ml'){ if(a>=1000) return [de(a/1000,2),'l']; return [de(a, a<10?1:0),'ml']; }
+    if(u==='kg'||u==='l') return [de(a,2),u];
+    return [de(a, 1),uLabel(u)];
+  }
+  function toGrams(a,u){ return u==='g'||u==='ml'?a : u==='kg'||u==='l'?a*1000 : 0; }
+
+  function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('show'),1600); }
+  function ask(text){
+    return new Promise(res=>{
+      $('modalText').textContent=text; $('modal').classList.remove('hidden');
+      const done=v=>{ $('modal').classList.add('hidden'); $('modalYes').onclick=$('modalNo').onclick=null; res(v); };
+      $('modalYes').onclick=()=>done(true); $('modalNo').onclick=()=>done(false);
+    });
+  }
+
+  // ---------- Sprache ----------
+  function applyLang(){
+    const t=L();
+    document.documentElement.lang=state.lang;
+    document.title=t.app;
+    document.querySelectorAll('[data-i18n]').forEach(el=>{ const v=t[el.dataset.i18n]; if(typeof v==='string') el.textContent=v; });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.placeholder=t[el.dataset.i18nPh]; });
+    $('langBtn').textContent = state.lang==='de' ? 'EN' : 'DE';
+  }
+  $('langBtn').onclick=()=>{
+    const from=state.lang, to=from==='de'?'en':'de';
+    // Unveränderte Grundrezepte mitübersetzen, eigene Rezepte bleiben wie sie sind
+    const dFrom=defaults(from), dTo=defaults(to);
+    state.breads=state.breads.map(b=>{
+      const i=dFrom.findIndex(d=>d.id===b.id);
+      return (i>=0 && sig(dFrom[i])===sig(b)) ? dTo[i] : b;
+    });
+    state.lang=to; save(); applyLang();
+    if(view==='edit') return; show(view);
+  };
+
+  // ---------- Views ----------
+  let view='calc';
+  function show(v){
+    view=v;
+    $('viewCalc').classList.toggle('hidden', v!=='calc');
+    $('viewList').classList.toggle('hidden', v!=='list');
+    $('viewEdit').classList.toggle('hidden', v!=='edit');
+    $('navBtn').textContent = v==='calc' ? L().recipes : L().back;
+    $('navBtn').classList.toggle('hidden', v==='edit');
+    $('langBtn').classList.toggle('hidden', v==='edit');
+    if(v==='calc') renderCalc();
+    if(v==='list') renderList();
+    window.scrollTo(0,0);
+  }
+  $('navBtn').onclick=()=>show(view==='calc'?'list':'calc');
+
+  // ---------- Rechner ----------
+  function current(){ return state.breads.find(b=>b.id===state.sel) || state.breads[0]; }
+
+  function renderCalc(){
+    const sel=$('breadSel');
+    sel.innerHTML = state.breads.map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+    if(!state.breads.length){ $('resBody').innerHTML=`<tr><td>${esc(L().noRecipes)}</td></tr>`; return; }
+    const b=current(); state.sel=b.id; sel.value=b.id;
+    $('count').value = state.count;
+    $('chips').innerHTML = [1,2,3,4,5,6,8,10,12,15,20,25].map(n=>`<button data-n="${n}" class="${n==state.count?'on':''}">${n}</button>`).join('');
+    renderResult();
+  }
+
+  function renderResult(){
+    const b=current(); if(!b) return;
+    const t=L(), c=num(state.count), f=c/(num(b.yield)||1);
+    $('yieldHint').textContent = t.baseFor(de(num(b.yield),2));
+    $('resTitle').textContent = t.ingFor(de(c,2), b.name);
+    let total=0;
+    $('resBody').innerHTML = b.ing.map(i=>{
+      const a=num(i.a)*f; total+=toGrams(a,i.u);
+      const [v,u]=fmt(a,i.u);
+      return `<tr><td>${esc(i.n)}</td><td class="amt">${v}</td><td class="unit">${esc(u)}</td></tr>`;
+    }).join('') || `<tr><td>${esc(t.noIng)}</td></tr>`;
+    $('totalW').textContent=fmt(total,'g').join(' ');
+    const pp = c>0 ? total/c : 0;
+    $('perPiece').textContent = pp ? fmt(pp,'g').join(' ') : '–';
+    document.querySelectorAll('#chips button').forEach(x=>x.classList.toggle('on', num(x.dataset.n)===c));
+    save();
+  }
+
+  $('breadSel').onchange=e=>{ state.sel=e.target.value; renderResult(); };
+  $('count').oninput=e=>{ state.count=Math.max(0,num(e.target.value)); renderResult(); };
+  $('minus').onclick=()=>{ state.count=Math.max(0,Math.round(num(state.count))-1); $('count').value=state.count; renderResult(); };
+  $('plus').onclick=()=>{ state.count=Math.floor(num(state.count))+1; $('count').value=state.count; renderResult(); };
+  $('chips').onclick=e=>{ const n=e.target.dataset&&e.target.dataset.n; if(!n) return; state.count=num(n); $('count').value=state.count; renderResult(); };
+
+  // ---------- Liste ----------
+  function renderList(){
+    const t=L();
+    $('recipeList').innerHTML = state.breads.map(b=>
+      `<div class="list-item"><div><b>${esc(b.name)}</b><br><small>${esc(t.listSub(b.ing.length, de(num(b.yield),2)))}</small></div>
+       <button class="btn ghost" data-edit="${esc(b.id)}">${esc(t.edit)}</button></div>`).join('') || `<p class="hint">${esc(t.none)}</p>`;
+  }
+  $('recipeList').onclick=e=>{ const id=e.target.dataset&&e.target.dataset.edit; if(id) openEditor(id); };
+  $('addBread').onclick=()=>openEditor(null);
+
+  // ---------- Editor ----------
+  let editId=null;
+  function ingRow(i){
+    const t=L(), d=document.createElement('div'); d.className='ing';
+    d.innerHTML=`<input class="n" placeholder="${esc(t.ing)}" value="${esc(i.n||'')}">
+      <input class="a" type="number" inputmode="decimal" step="any" min="0" placeholder="0" value="${i.a===''||i.a==null?'':esc(i.a)}">
+      <select class="u">${UNITS.map(u=>`<option value="${u}"${u===(i.u||'g')?' selected':''}>${esc(uLabel(u))}</option>`).join('')}</select>
+      <button class="x" title="${esc(t.remove)}" aria-label="${esc(t.remove)}">×</button>`;
+    d.querySelector('.x').onclick=()=>d.remove();
+    return d;
+  }
+  function openEditor(id){
+    editId=id; const t=L();
+    const b = id ? state.breads.find(x=>x.id===id) : {name:'',yield:1,ing:t.defIng.map(n=>({n,a:'',u:'g'}))};
+    $('editTitle').textContent = id ? t.editTitle : t.newTitle;
+    $('eName').value=b.name; $('eYield').value=b.yield;
+    const l=$('ingList'); l.innerHTML=''; b.ing.forEach(i=>l.appendChild(ingRow(i)));
+    $('delBread').classList.toggle('hidden', !id);
+    show('edit');
+  }
+  $('addIng').onclick=()=>{ const r=ingRow({n:'',a:'',u:'g'}); $('ingList').appendChild(r); r.querySelector('.n').focus(); };
+  $('cancelEdit').onclick=()=>show('list');
+  $('saveEdit').onclick=()=>{
+    const t=L(), name=$('eName').value.trim();
+    if(!name){ toast(t.needName); $('eName').focus(); return; }
+    const y=num($('eYield').value); if(y<=0){ toast(t.needYield); return; }
+    const ing=[...document.querySelectorAll('#ingList .ing')].map(r=>({
+      n:r.querySelector('.n').value.trim(), a:num(r.querySelector('.a').value), u:r.querySelector('.u').value
+    })).filter(i=>i.n);
+    if(editId){ Object.assign(state.breads.find(x=>x.id===editId),{name,yield:y,ing}); }
+    else { const id='b'+Date.now().toString(36); state.breads.push({id,name,yield:y,ing}); state.sel=id; }
+    save(); toast(t.saved); show('list');
+  };
+  $('delBread').onclick=async()=>{
+    const t=L(), b=state.breads.find(x=>x.id===editId);
+    if(!(await ask(t.confirmDel(b.name)))) return;
+    state.breads=state.breads.filter(x=>x.id!==editId);
+    if(state.sel===editId && state.breads[0]) state.sel=state.breads[0].id;
+    save(); toast(t.deleted); show('list');
+  };
+
+  // ---------- Sicherung ----------
+  $('exportBtn').onclick=async()=>{
+    const data={app:'brotrechner',version:1,exported:new Date().toISOString(),breads:state.breads};
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const d=new Date(), pad=n=>String(n).padStart(2,'0');
+    const fname=`brotrechner-${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}.json`;
+    const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    if(isIOS && navigator.canShare){
+      try{
+        const file=new File([blob],fname,{type:'application/json'});
+        if(navigator.canShare({files:[file]})){ await navigator.share({files:[file]}); return; }
+      }catch(err){ if(err&&err.name==='AbortError') return; }
+    }
+    const url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download=fname;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+    toast(L().downloaded);
+  };
+  $('importBtn').onclick=()=>{ $('fileIn').value=''; $('fileIn').click(); };
+  $('fileIn').onchange=async e=>{
+    const t=L(), f=e.target.files&&e.target.files[0]; if(!f) return;
+    let data; try{ data=JSON.parse(await f.text()); }catch(err){ toast(t.invalid); return; }
+    if(data && !Array.isArray(data) && Array.isArray(data.breads)) data=data.breads;
+    if(!Array.isArray(data) || !data.every(b=>b&&b.name&&Array.isArray(b.ing))){ toast(t.invalid); return; }
+    if(!(await ask(t.confirmImport(data.length)))) return;
+    state.breads=data.map((b,i)=>({id:b.id||('i'+i+Date.now().toString(36)),name:String(b.name),yield:num(b.yield)||1,
+      ing:b.ing.map(x=>({n:String(x.n||''),a:num(x.a),u:UNITS.includes(x.u)?x.u:'g'}))}));
+    state.sel=state.breads[0]&&state.breads[0].id; save();
+    toast(t.imported); renderList();
+  };
+  $('resetBtn').onclick=async()=>{
+    const t=L();
+    if(!(await ask(t.confirmReset))) return;
+    const d=defaults(state.lang);
+    state={lang:state.lang, breads:d, sel:d[0].id, count:1}; save(); toast(t.resetDone); renderList();
+  };
+
+  applyLang();
+  show('calc');
+
+  // Offline-Modus (nur wenn über http/https geöffnet)
+  if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+    try{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }catch(e){}
+  }
+  try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); }catch(e){}
+})();
+</script>
+</body>
+</html>
